@@ -75,9 +75,9 @@ def send_message(bot, message):
     """Отправка сообщения."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logger.debug(f'Сообщение отправлено: {message}')
+        logger.debug(f'Сообщение отправлено: {message}.')
     except telegram.TelegramError as telegram_error:
-        logger.error(f'Сообщение не отправлено: {telegram_error}')
+        logger.error(f'Сообщение не отправлено: {telegram_error}.')
 
 
 def get_api_answer(timestamp):
@@ -107,14 +107,11 @@ def get_api_answer(timestamp):
 
 def parse_status(homework):
     """Анализируем статус."""
-    if 'homework_name' not in homework:
-        message = 'Ключ homework_name недоступен'
-        logger.error(message)
-        raise KeyError(message)
-    if 'status' not in homework:
-        message = 'Ключ status недоступен'
-        logger.error(message)
-        raise KeyError(message)
+    for i in ['homework_name', 'status']:
+        if i not in homework:
+            message = f'Ключ {i} недоступен.'
+            logger.error(message)
+            raise KeyError(message)
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status in HOMEWORK_VERDICTS:
@@ -128,16 +125,20 @@ def parse_status(homework):
 def check_response(response):
     """Проверяем данные."""
     if type(response) != dict:
-        logger.error(f'Некорректный тип данных. Тип данных: {type(response)}.')
+        message = f'Некорректный тип данных. Тип данных: {type(response)}.'
+        logger.error(message)
         raise TypeError
     if 'homeworks' not in response:
+        message = 'Ключа homeworks нет в ответе API.'
         logger.error('Ключа homeworks нет в ответе API.')
         raise ResponseNoHomeworksKey
     homework_list = response['homeworks']
     if type(homework_list) != list:
-        logger.error(f'Некорректный тип данных. '
-                     f'Тип данных: {type(homework_list)}.')
+        message = (f'Некорректный тип данных. '
+                   f'Тип данных: {type(homework_list)}.')
+        logger.error(message)
         raise TypeError
+    return homework_list
 
 
 def main():
@@ -152,13 +153,13 @@ def main():
             response = get_api_answer(timestamp)
             homework = check_response(response)
             if len(homework) == 0:
-                logger.info('Статус не обновлен')
-            if new_status != homework['status']:
-                message = parse_status(homework)
+                logger.info('Статус не обновлен.')
+            if new_status != homework[0]['status']:
+                message = parse_status(homework[0])
                 send_message(bot, message)
-                new_status = homework['status']
-            logger.info('Изменений нет')
-            time.sleep(RETRY_PERIOD)
+                new_status = homework[0]['status']
+            else:
+                logger.info('Изменений нет.')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
