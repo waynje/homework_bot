@@ -85,7 +85,7 @@ def get_api_answer(timestamp):
     try:
         return homework_statuses.json()
     except Exception as error:
-        message = f'Ошибка преобразования к формату json: {error}'
+        message = f'Ошибка преобразования к формату json: {error}.'
         LOGGER.error(message)
         raise ApiAnswerError(message)
 
@@ -95,7 +95,7 @@ def parse_status(homework):
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if not homework_name or not homework_status:
-        LOGGER.error('Ключ недоступен')
+        LOGGER.error('Ключ недоступен.')
         raise KeyError
     if homework_status not in HOMEWORK_VERDICTS:
         LOGGER.error('Статус домашки не найден в базе статусов.')
@@ -138,14 +138,13 @@ def main():
         try:
             response = get_api_answer(timestamp)
             homework = check_response(response)
-            if len(homework) == 0:
-                LOGGER.info('Статус не обновлен.')
-            if new_status != homework[0]['status']:
-                message = parse_status(homework[0])
-                send_message(bot, message)
-                new_status = homework[0]['status']
-            else:
-                LOGGER.info('Изменений нет.')
+            if len(homework) != 0:
+                if new_status != homework[0]['status']:
+                    message = parse_status(homework[0])
+                    send_message(bot, message)
+                    new_status = homework[0]['status']
+                else:
+                    LOGGER.info('Изменений нет.')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             LOGGER.error(message)
